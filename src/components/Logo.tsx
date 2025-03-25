@@ -11,7 +11,7 @@ const Logo = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <img 
-        src="/logo.png" 
+        src="/lovable-uploads/eeb73cf9-57d7-4044-aad2-455101ddd77a.png" 
         alt="DineSure Logo" 
         className="w-full h-full object-contain" 
       />
