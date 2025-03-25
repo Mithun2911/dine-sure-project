@@ -7,7 +7,9 @@ import {
   doc, 
   query, 
   where,
-  DocumentData 
+  DocumentData,
+  Query,
+  CollectionReference
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { isOnline, storeLocalData, getLocalData, generateLocalId } from './utils';
@@ -38,7 +40,7 @@ export async function fetchRestaurants(isVegFilter: boolean | null = null): Prom
   if (isOnline()) {
     try {
       const restaurantsCollection = collection(db, 'restaurants');
-      let restaurantsQuery = restaurantsCollection;
+      let restaurantsQuery: CollectionReference<DocumentData> | Query<DocumentData> = restaurantsCollection;
       
       if (isVegFilter !== null) {
         restaurantsQuery = query(restaurantsCollection, where('isVeg', '==', isVegFilter));
