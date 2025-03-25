@@ -19,7 +19,7 @@ const Hero: React.FC<HeroProps> = ({ onBookTable }) => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="mb-6"
+        className="mb-8 flex justify-center w-full"
       >
         <Logo />
       </motion.div>

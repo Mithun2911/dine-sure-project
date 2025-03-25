@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 const Logo = () => {
   return (
     <motion.div 
-      className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 relative"
+      className="w-40 h-40 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
