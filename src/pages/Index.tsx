@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Hero from '@/components/Hero';
@@ -52,16 +51,30 @@ const Index = () => {
     try {
       setLoading(true);
       const data = await fetchRestaurants(isVegFilter);
-      setRestaurants(data);
+      
+      // Add a small delay to simulate network latency (helps with showing loading state)
+      setTimeout(() => {
+        setRestaurants(data);
+        setLoading(false);
+        
+        // Show a toast notification with the number of restaurants found
+        toast({
+          title: `${data.length} Restaurant${data.length !== 1 ? 's' : ''} Found`,
+          description: data.length > 0 
+            ? `Showing ${data.length} ${isVegFilter ? 'vegetarian' : 'non-vegetarian'} restaurant${data.length !== 1 ? 's' : ''}.`
+            : `No ${isVegFilter ? 'vegetarian' : 'non-vegetarian'} restaurants found. Try a different selection.`,
+          variant: data.length > 0 ? "default" : "destructive"
+        });
+      }, 500);
+      
     } catch (error) {
       console.error("Error loading restaurants:", error);
+      setLoading(false);
       toast({
         title: "Error",
         description: "Failed to load restaurants. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -161,6 +174,7 @@ const Index = () => {
             restaurants={restaurants}
             onBack={handleBack}
             onBookTable={handleBookTable}
+            loading={loading}
           />
         )}
       </AnimatePresence>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import RestaurantCard from './RestaurantCard';
 import { Restaurant } from '@/types/restaurant';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RestaurantListProps {
   restaurants: Restaurant[];
@@ -15,12 +16,14 @@ interface RestaurantListProps {
     selectedCapacity: string, 
     isVeg: boolean
   ) => void;
+  loading?: boolean;
 }
 
 const RestaurantList: React.FC<RestaurantListProps> = ({
   restaurants,
   onBack,
-  onBookTable
+  onBookTable,
+  loading = false
 }) => {
   return (
     <motion.div 
@@ -42,9 +45,16 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
         <h2 className="text-2xl md:text-3xl font-bold text-white">Nearby Restaurants</h2>
       </div>
       
-      {restaurants.length === 0 ? (
+      {loading ? (
+        // Loading skeletons
+        Array(3).fill(0).map((_, index) => (
+          <div key={`skeleton-${index}`} className="mb-8">
+            <Skeleton className="w-full h-[200px] mb-2 rounded-xl" />
+          </div>
+        ))
+      ) : restaurants.length === 0 ? (
         <div className="text-center p-8 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
-          <p className="text-white text-xl">No restaurants found.</p>
+          <p className="text-white text-xl">No restaurants found. Please try again or go back to select a different restaurant type.</p>
         </div>
       ) : (
         restaurants.map((restaurant) => (
