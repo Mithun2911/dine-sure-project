@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Clock } from 'lucide-react';
 import RestaurantCard from './RestaurantCard';
 import { Restaurant } from '@/types/restaurant';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fetchRestaurants } from '@/lib/api';
 
 interface RestaurantListProps {
   restaurants: Restaurant[];
@@ -18,14 +19,45 @@ interface RestaurantListProps {
     isVeg: boolean
   ) => void;
   loading?: boolean;
+  isVegFilter: boolean | null;
 }
 
 const RestaurantList: React.FC<RestaurantListProps> = ({
-  restaurants,
+  restaurants: initialRestaurants,
   onBack,
   onBookTable,
-  loading = false
+  loading = false,
+  isVegFilter
 }) => {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
+  
+  // Refresh restaurants data when a booking is made
+  const handleBookTable = async (
+    restaurantName: string, 
+    tableNumber: number, 
+    selectedTime: string, 
+    selectedCapacity: string, 
+    isVeg: boolean
+  ) => {
+    // Call the parent component's booking handler
+    onBookTable(restaurantName, tableNumber, selectedTime, selectedCapacity, isVeg);
+    
+    // After a short delay, refresh the restaurant data to show updated table status
+    setTimeout(async () => {
+      try {
+        const refreshedRestaurants = await fetchRestaurants(isVegFilter);
+        setRestaurants(refreshedRestaurants);
+      } catch (error) {
+        console.error("Error refreshing restaurants:", error);
+      }
+    }, 1000); // Wait 1 second after booking is complete
+  };
+  
+  // Update local state when props change
+  useEffect(() => {
+    setRestaurants(initialRestaurants);
+  }, [initialRestaurants]);
+
   return (
     <motion.div 
       className="container max-w-5xl mx-auto px-4 py-8"
@@ -62,7 +94,7 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
           <RestaurantCard
             key={restaurant.id}
             restaurant={restaurant}
-            onBookTable={onBookTable}
+            onBookTable={handleBookTable}
           />
         ))
       )}

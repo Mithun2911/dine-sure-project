@@ -181,7 +181,7 @@ export async function fetchBookingDetails(bookingId: string): Promise<BookingDat
 }
 
 // Fetch all bookings
-export async function fetchAllBookings(limit: number = 10): Promise<BookingData[]> {
+export async function fetchAllBookings(limitCount: number = 10): Promise<BookingData[]> {
   // Try to fetch from Firebase if online
   if (isOnline()) {
     try {
@@ -189,7 +189,7 @@ export async function fetchAllBookings(limit: number = 10): Promise<BookingData[
       const q = query(
         bookingsCollection,
         orderBy("createdAt", "desc"),
-        limit(limit)
+        limit(limitCount)
       );
       
       const querySnapshot = await getDocs(q);
@@ -217,7 +217,7 @@ export async function fetchAllBookings(limit: number = 10): Promise<BookingData[
   // Sort by created date descending and limit
   return localBookings
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, limit);
+    .slice(0, limitCount);
 }
 
 // Update restaurant table status

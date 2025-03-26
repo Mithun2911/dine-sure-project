@@ -149,7 +149,7 @@ const Index = () => {
         variant: "default",
       });
       
-      // Refresh restaurants
+      // Refresh restaurants immediately after booking
       loadRestaurants();
       
     } catch (error) {
@@ -183,6 +183,7 @@ const Index = () => {
             onBack={handleBack}
             onBookTable={handleBookTable}
             loading={loading}
+            isVegFilter={isVegFilter}
           />
         )}
       </AnimatePresence>
