@@ -16,8 +16,8 @@ import type { BookingData } from './types';
 import { updateRestaurantTableStatus } from './restaurants';
 import { BookingDetails } from '@/components/TableBookingModal';
 
-// Firebase collection name constant - changed for better identification
-const BOOKINGS_COLLECTION = 'restaurant_orders';
+// Firebase collection name constant - new name for clear identification
+const BOOKINGS_COLLECTION = 'customer_orders_new';
 
 // Create a booking
 export async function createBooking(
@@ -47,11 +47,17 @@ export async function createBooking(
     createdAt: new Date().toISOString()
   };
   
+  console.log("Preparing to save booking:", bookingData);
+  console.log("Using collection:", BOOKINGS_COLLECTION);
+  
   // Try to save to Firebase if online
   if (isOnline()) {
     try {
+      console.log("Network is online, attempting to save to Firestore...");
       const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const docRef = await addDoc(bookingsCollection, bookingData);
+      
+      console.log("SUCCESS: Document written with ID:", docRef.id);
       
       // Update restaurant table status
       await updateRestaurantTableStatus(
@@ -72,6 +78,8 @@ export async function createBooking(
       console.error(`Error saving to Firebase ${BOOKINGS_COLLECTION} collection:`, error);
       // Continue with local storage if Firebase fails
     }
+  } else {
+    console.log("Network is offline, saving to local storage only");
   }
   
   // Store locally if offline or Firebase failed
@@ -93,16 +101,22 @@ export async function createBooking(
 
 // Fetch booking details
 export async function fetchBookingDetails(bookingId: string): Promise<BookingData | null> {
+  console.log(`Attempting to fetch booking details for ID: ${bookingId}`);
+  
   // Try to fetch from Firebase if online
   if (isOnline()) {
     try {
+      console.log(`Looking in ${BOOKINGS_COLLECTION} collection...`);
       const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const q = query(bookingsCollection, where("id", "==", bookingId));
       const querySnapshot = await getDocs(q);
       
       if (!querySnapshot.empty) {
         const bookingDoc = querySnapshot.docs[0];
+        console.log("Found booking document:", bookingDoc.id);
         return { id: bookingDoc.id, ...bookingDoc.data() } as BookingData;
+      } else {
+        console.log("No booking found with that ID");
       }
     } catch (error) {
       console.error(`Error fetching booking from Firebase ${BOOKINGS_COLLECTION} collection:`, error);
@@ -111,6 +125,7 @@ export async function fetchBookingDetails(bookingId: string): Promise<BookingDat
   }
   
   // Try to get from localStorage
+  console.log("Checking local storage for booking");
   const localBookings = getLocalData<BookingData[]>('bookings') || [];
   const booking = localBookings.find(b => b.id === bookingId);
   
@@ -119,9 +134,12 @@ export async function fetchBookingDetails(bookingId: string): Promise<BookingDat
 
 // Fetch all bookings
 export async function fetchAllBookings(limitCount: number = 10): Promise<BookingData[]> {
+  console.log(`Attempting to fetch up to ${limitCount} bookings...`);
+  
   // Try to fetch from Firebase if online
   if (isOnline()) {
     try {
+      console.log(`Looking in ${BOOKINGS_COLLECTION} collection...`);
       const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const q = query(
         bookingsCollection,
@@ -142,6 +160,8 @@ export async function fetchAllBookings(limitCount: number = 10): Promise<Booking
         
         console.log(`Fetched ${bookings.length} bookings from ${BOOKINGS_COLLECTION} collection`);
         return bookings;
+      } else {
+        console.log(`No bookings found in ${BOOKINGS_COLLECTION} collection`);
       }
     } catch (error) {
       console.error(`Error fetching bookings from Firebase ${BOOKINGS_COLLECTION} collection:`, error);
@@ -150,6 +170,7 @@ export async function fetchAllBookings(limitCount: number = 10): Promise<Booking
   }
   
   // Get from localStorage
+  console.log("Checking local storage for bookings");
   const localBookings = getLocalData<BookingData[]>('bookings') || [];
   
   // Sort by created date descending and limit
