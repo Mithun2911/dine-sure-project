@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Hero from '@/components/Hero';
@@ -119,7 +120,7 @@ const Index = () => {
     
     try {
       // Create booking using API service
-      await createBooking(
+      const bookingResult = await createBooking(
         {
           restaurantName: currentBooking.restaurantName,
           tableNumber: currentBooking.tableNumber,
@@ -140,6 +141,13 @@ const Index = () => {
       
       setBookingModalOpen(false);
       setConfirmationModalOpen(true);
+      
+      // Show toast notification about the table being held
+      toast({
+        title: "Table Booked Successfully!",
+        description: `Your table will be held for 30 minutes. Please arrive on time. Booking ID: ${bookingResult.id.substring(0, 8)}`,
+        variant: "default",
+      });
       
       // Refresh restaurants
       loadRestaurants();

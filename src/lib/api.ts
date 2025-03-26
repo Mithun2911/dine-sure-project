@@ -9,7 +9,10 @@ import {
   where,
   DocumentData,
   Query,
-  CollectionReference
+  CollectionReference,
+  orderBy,
+  limit,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { isOnline, storeLocalData, getLocalData, generateLocalId } from './utils';
@@ -17,7 +20,7 @@ import { Restaurant } from '@/types/restaurant';
 import { BookingDetails } from '@/components/TableBookingModal';
 
 // Interface for booking data
-interface BookingData {
+export interface BookingData {
   id: string;
   restaurantName: string;
   tableNumber: number;
@@ -149,6 +152,72 @@ export async function createBooking(
   );
   
   return newBooking;
+}
+
+// Fetch booking details
+export async function fetchBookingDetails(bookingId: string): Promise<BookingData | null> {
+  // Try to fetch from Firebase if online
+  if (isOnline()) {
+    try {
+      const bookingsCollection = collection(db, 'bookings');
+      const q = query(bookingsCollection, where("id", "==", bookingId));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const bookingDoc = querySnapshot.docs[0];
+        return { id: bookingDoc.id, ...bookingDoc.data() } as BookingData;
+      }
+    } catch (error) {
+      console.error("Error fetching booking from Firebase:", error);
+      // Fall back to local data if Firebase fails
+    }
+  }
+  
+  // Try to get from localStorage
+  const localBookings = getLocalData<BookingData[]>('bookings') || [];
+  const booking = localBookings.find(b => b.id === bookingId);
+  
+  return booking || null;
+}
+
+// Fetch all bookings
+export async function fetchAllBookings(limit: number = 10): Promise<BookingData[]> {
+  // Try to fetch from Firebase if online
+  if (isOnline()) {
+    try {
+      const bookingsCollection = collection(db, 'bookings');
+      const q = query(
+        bookingsCollection,
+        orderBy("createdAt", "desc"),
+        limit(limit)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const bookings = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as BookingData[];
+        
+        // Store in localStorage for offline access
+        storeLocalData('bookings', bookings);
+        
+        return bookings;
+      }
+    } catch (error) {
+      console.error("Error fetching bookings from Firebase:", error);
+      // Fall back to local data if Firebase fails
+    }
+  }
+  
+  // Get from localStorage
+  const localBookings = getLocalData<BookingData[]>('bookings') || [];
+  
+  // Sort by created date descending and limit
+  return localBookings
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, limit);
 }
 
 // Update restaurant table status

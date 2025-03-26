@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Clock } from 'lucide-react';
 import RestaurantCard from './RestaurantCard';
 import { Restaurant } from '@/types/restaurant';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,6 +66,13 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
           />
         ))
       )}
+      
+      <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+        <div className="flex items-center gap-2 text-white/80">
+          <Clock className="h-5 w-5" />
+          <p className="text-sm">Note: All table reservations are held for 30 minutes from the scheduled time.</p>
+        </div>
+      </div>
     </motion.div>
   );
 };
