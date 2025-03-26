@@ -2,40 +2,17 @@
 import { 
   collection, 
   getDocs, 
-  addDoc, 
   updateDoc, 
   doc, 
   query, 
   where,
-  DocumentData,
   Query,
   CollectionReference,
-  orderBy,
-  limit,
-  getDoc
+  DocumentData
 } from 'firebase/firestore';
-import { db } from './firebase';
-import { isOnline, storeLocalData, getLocalData, generateLocalId } from './utils';
+import { db } from '../firebase';
+import { isOnline, storeLocalData, getLocalData } from '../utils';
 import { Restaurant } from '@/types/restaurant';
-import { BookingDetails } from '@/components/TableBookingModal';
-
-// Interface for booking data
-export interface BookingData {
-  id: string;
-  restaurantName: string;
-  tableNumber: number;
-  time: string;
-  capacity: string;
-  isVeg: boolean;
-  customerName: string;
-  contactDetails: string;
-  starter: string;
-  mainCourse: string;
-  dessert: string;
-  specialInstructions: string;
-  status: 'confirmed' | 'cancelled';
-  createdAt: string;
-}
 
 // Fetch restaurants
 export async function fetchRestaurants(isVegFilter: boolean | null = null): Promise<Restaurant[]> {
@@ -83,145 +60,8 @@ export async function fetchRestaurants(isVegFilter: boolean | null = null): Prom
   return generateMockRestaurants(isVegFilter);
 }
 
-// Create a booking
-export async function createBooking(
-  restaurantInfo: {
-    restaurantName: string;
-    tableNumber: number;
-    time: string;
-    capacity: string;
-    isVeg: boolean;
-  },
-  customerDetails: BookingDetails
-): Promise<BookingData> {
-  // Prepare the booking data
-  const bookingData: Omit<BookingData, 'id'> = {
-    restaurantName: restaurantInfo.restaurantName,
-    tableNumber: restaurantInfo.tableNumber,
-    time: restaurantInfo.time,
-    capacity: restaurantInfo.capacity,
-    isVeg: restaurantInfo.isVeg,
-    customerName: customerDetails.customerName,
-    contactDetails: customerDetails.contactDetails,
-    starter: customerDetails.starter,
-    mainCourse: customerDetails.mainCourse,
-    dessert: customerDetails.dessert,
-    specialInstructions: customerDetails.specialInstructions,
-    status: 'confirmed',
-    createdAt: new Date().toISOString()
-  };
-  
-  // Try to save to Firebase if online
-  if (isOnline()) {
-    try {
-      const bookingsCollection = collection(db, 'bookings');
-      const docRef = await addDoc(bookingsCollection, bookingData);
-      
-      // Update restaurant table status
-      await updateRestaurantTableStatus(
-        restaurantInfo.restaurantName,
-        restaurantInfo.tableNumber,
-        'Booked'
-      );
-      
-      const newBooking = { id: docRef.id, ...bookingData };
-      
-      // Store in localStorage for offline access
-      const localBookings = getLocalData<BookingData[]>('bookings') || [];
-      storeLocalData('bookings', [...localBookings, newBooking]);
-      
-      return newBooking;
-    } catch (error) {
-      console.error("Error saving to Firebase:", error);
-      // Continue with local storage if Firebase fails
-    }
-  }
-  
-  // Store locally if offline or Firebase failed
-  const localId = generateLocalId();
-  const newBooking = { id: localId, ...bookingData };
-  
-  const localBookings = getLocalData<BookingData[]>('bookings') || [];
-  storeLocalData('bookings', [...localBookings, newBooking]);
-  
-  // Update local restaurant data
-  updateLocalRestaurantTableStatus(
-    restaurantInfo.restaurantName,
-    restaurantInfo.tableNumber,
-    'Booked'
-  );
-  
-  return newBooking;
-}
-
-// Fetch booking details
-export async function fetchBookingDetails(bookingId: string): Promise<BookingData | null> {
-  // Try to fetch from Firebase if online
-  if (isOnline()) {
-    try {
-      const bookingsCollection = collection(db, 'bookings');
-      const q = query(bookingsCollection, where("id", "==", bookingId));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const bookingDoc = querySnapshot.docs[0];
-        return { id: bookingDoc.id, ...bookingDoc.data() } as BookingData;
-      }
-    } catch (error) {
-      console.error("Error fetching booking from Firebase:", error);
-      // Fall back to local data if Firebase fails
-    }
-  }
-  
-  // Try to get from localStorage
-  const localBookings = getLocalData<BookingData[]>('bookings') || [];
-  const booking = localBookings.find(b => b.id === bookingId);
-  
-  return booking || null;
-}
-
-// Fetch all bookings
-export async function fetchAllBookings(limitCount: number = 10): Promise<BookingData[]> {
-  // Try to fetch from Firebase if online
-  if (isOnline()) {
-    try {
-      const bookingsCollection = collection(db, 'bookings');
-      const q = query(
-        bookingsCollection,
-        orderBy("createdAt", "desc"),
-        limit(limitCount)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const bookings = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as BookingData[];
-        
-        // Store in localStorage for offline access
-        storeLocalData('bookings', bookings);
-        
-        return bookings;
-      }
-    } catch (error) {
-      console.error("Error fetching bookings from Firebase:", error);
-      // Fall back to local data if Firebase fails
-    }
-  }
-  
-  // Get from localStorage
-  const localBookings = getLocalData<BookingData[]>('bookings') || [];
-  
-  // Sort by created date descending and limit
-  return localBookings
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, limitCount);
-}
-
 // Update restaurant table status
-async function updateRestaurantTableStatus(
+export async function updateRestaurantTableStatus(
   restaurantName: string,
   tableNumber: number,
   status: 'Available' | 'Booked'
@@ -265,7 +105,7 @@ async function updateRestaurantTableStatus(
 }
 
 // Update restaurant table status in localStorage
-function updateLocalRestaurantTableStatus(
+export function updateLocalRestaurantTableStatus(
   restaurantName: string,
   tableNumber: number,
   status: 'Available' | 'Booked'
@@ -292,7 +132,7 @@ function updateLocalRestaurantTableStatus(
 }
 
 // Generate mock restaurant data
-function generateMockRestaurants(isVegFilter: boolean | null = null): Restaurant[] {
+export function generateMockRestaurants(isVegFilter: boolean | null = null): Restaurant[] {
   const mockRestaurants: Restaurant[] = [
     {
       id: "1",

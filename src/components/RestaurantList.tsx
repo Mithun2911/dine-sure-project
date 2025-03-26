@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
 }) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
   
-  // Refresh restaurants data when a booking is made
   const handleBookTable = async (
     restaurantName: string, 
     tableNumber: number, 
@@ -39,10 +37,7 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
     selectedCapacity: string, 
     isVeg: boolean
   ) => {
-    // Call the parent component's booking handler
     onBookTable(restaurantName, tableNumber, selectedTime, selectedCapacity, isVeg);
-    
-    // After a short delay, refresh the restaurant data to show updated table status
     setTimeout(async () => {
       try {
         const refreshedRestaurants = await fetchRestaurants(isVegFilter);
@@ -50,10 +45,9 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
       } catch (error) {
         console.error("Error refreshing restaurants:", error);
       }
-    }, 1000); // Wait 1 second after booking is complete
+    }, 1000);
   };
   
-  // Update local state when props change
   useEffect(() => {
     setRestaurants(initialRestaurants);
   }, [initialRestaurants]);
@@ -79,7 +73,6 @@ const RestaurantList: React.FC<RestaurantListProps> = ({
       </div>
       
       {loading ? (
-        // Loading skeletons
         Array(3).fill(0).map((_, index) => (
           <div key={`skeleton-${index}`} className="mb-8">
             <Skeleton className="w-full h-[200px] mb-2 rounded-xl" />
