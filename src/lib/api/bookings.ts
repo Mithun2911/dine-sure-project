@@ -16,6 +16,9 @@ import type { BookingData } from './types';
 import { updateRestaurantTableStatus } from './restaurants';
 import { BookingDetails } from '@/components/TableBookingModal';
 
+// Firebase collection name constant - changed for better identification
+const BOOKINGS_COLLECTION = 'restaurant_orders';
+
 // Create a booking
 export async function createBooking(
   restaurantInfo: {
@@ -47,7 +50,7 @@ export async function createBooking(
   // Try to save to Firebase if online
   if (isOnline()) {
     try {
-      const bookingsCollection = collection(db, 'bookings');
+      const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const docRef = await addDoc(bookingsCollection, bookingData);
       
       // Update restaurant table status
@@ -63,9 +66,10 @@ export async function createBooking(
       const localBookings = getLocalData<BookingData[]>('bookings') || [];
       storeLocalData('bookings', [...localBookings, newBooking]);
       
+      console.log(`Booking saved to ${BOOKINGS_COLLECTION} collection with ID:`, docRef.id);
       return newBooking;
     } catch (error) {
-      console.error("Error saving to Firebase:", error);
+      console.error(`Error saving to Firebase ${BOOKINGS_COLLECTION} collection:`, error);
       // Continue with local storage if Firebase fails
     }
   }
@@ -92,7 +96,7 @@ export async function fetchBookingDetails(bookingId: string): Promise<BookingDat
   // Try to fetch from Firebase if online
   if (isOnline()) {
     try {
-      const bookingsCollection = collection(db, 'bookings');
+      const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const q = query(bookingsCollection, where("id", "==", bookingId));
       const querySnapshot = await getDocs(q);
       
@@ -101,7 +105,7 @@ export async function fetchBookingDetails(bookingId: string): Promise<BookingDat
         return { id: bookingDoc.id, ...bookingDoc.data() } as BookingData;
       }
     } catch (error) {
-      console.error("Error fetching booking from Firebase:", error);
+      console.error(`Error fetching booking from Firebase ${BOOKINGS_COLLECTION} collection:`, error);
       // Fall back to local data if Firebase fails
     }
   }
@@ -118,7 +122,7 @@ export async function fetchAllBookings(limitCount: number = 10): Promise<Booking
   // Try to fetch from Firebase if online
   if (isOnline()) {
     try {
-      const bookingsCollection = collection(db, 'bookings');
+      const bookingsCollection = collection(db, BOOKINGS_COLLECTION);
       const q = query(
         bookingsCollection,
         orderBy("createdAt", "desc"),
@@ -136,10 +140,11 @@ export async function fetchAllBookings(limitCount: number = 10): Promise<Booking
         // Store in localStorage for offline access
         storeLocalData('bookings', bookings);
         
+        console.log(`Fetched ${bookings.length} bookings from ${BOOKINGS_COLLECTION} collection`);
         return bookings;
       }
     } catch (error) {
-      console.error("Error fetching bookings from Firebase:", error);
+      console.error(`Error fetching bookings from Firebase ${BOOKINGS_COLLECTION} collection:`, error);
       // Fall back to local data if Firebase fails
     }
   }
